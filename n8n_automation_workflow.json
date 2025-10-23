@@ -1,0 +1,505 @@
+{
+  "name": "New Topics 4h Updates Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Cron Trigger (4h)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/recommendations/trigger",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "n8n_automation"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger-ai-generation",
+      "name": "Trigger AI Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/twitter/analyze",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "AI coding OR programming OR software development OR machine learning"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "analyze-twitter-trends",
+      "name": "Analyze Twitter Trends",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/scheduler/trigger",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "topics",
+              "value": "AI coding,programming,software development,machine learning,artificial intelligence"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trigger-topic-search",
+      "name": "Trigger Topic Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-success",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/recommendations",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "20"
+            },
+            {
+              "name": "source",
+              "value": "all"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-new-topics",
+      "name": "Get New Topics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/trending",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-trending-topics",
+      "name": "Get Trending Topics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Process and format the new topics data\nconst newTopics = $input.first().json;\nconst trendingTopics = $input.last().json;\n\n// Extract topics from recommendations\nconst recommendations = newTopics.recommendations || [];\nconst trending = trendingTopics.trending || [];\n\n// Format topics for notification\nconst formattedTopics = [];\n\n// Add AI recommendations\nrecommendations.slice(0, 5).forEach((rec, index) => {\n  formattedTopics.push({\n    type: 'AI Recommendation',\n    topic: rec.topic || rec.query,\n    confidence: rec.confidence,\n    source: rec.source || 'AI',\n    rank: index + 1\n  });\n});\n\n// Add trending topics\ntrending.slice(0, 5).forEach((trend, index) => {\n  formattedTopics.push({\n    type: 'Trending',\n    topic: trend.topic || trend.name,\n    score: trend.score || trend.frequency,\n    source: trend.source || 'Trending',\n    rank: index + 1\n  });\n});\n\n// Create summary\nconst summary = {\n  timestamp: new Date().toISOString(),\n  totalTopics: formattedTopics.length,\n  aiRecommendations: recommendations.length,\n  trendingTopics: trending.length,\n  topics: formattedTopics\n};\n\nreturn [{ json: summary }];"
+      },
+      "id": "process-topics",
+      "name": "Process Topics",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "🔄 New Topics Update (4h)\n\n📊 Summary:\n- Total Topics: {{ $json.totalTopics }}\n- AI Recommendations: {{ $json.aiRecommendations }}\n- Trending Topics: {{ $json.trendingTopics }}\n\n🔥 Top Topics:\n{{ $json.topics.slice(0, 5).map((topic, i) => `${i+1}. ${topic.topic} (${topic.type})`).join('\\n') }}\n\n⏰ Updated: {{ $json.timestamp }}"
+            },
+            {
+              "name": "username",
+              "value": "TopicBot"
+            },
+            {
+              "name": "icon_emoji",
+              "value": ":robot_face:"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-slack-notification",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/api/twitter/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "AI coding tools"
+            },
+            {
+              "name": "max_results",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "search-twitter-tweets",
+      "name": "Search Twitter Tweets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        900,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Create a comprehensive topic update report\nconst data = $input.first().json;\n\n// Generate HTML email content\nconst htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n        .header { background: #f0f0f0; padding: 20px; border-radius: 5px; }\n        .topic { margin: 10px 0; padding: 10px; border-left: 3px solid #007acc; }\n        .ai-topic { border-left-color: #28a745; }\n        .trending-topic { border-left-color: #ffc107; }\n        .stats { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 20px 0; }\n    </style>\n</head>\n<body>\n    <div class=\"header\">\n        <h1>🤖 AI Search Dashboard - 4h Update</h1>\n        <p>Automated topic discovery and trending analysis</p>\n    </div>\n    \n    <div class=\"stats\">\n        <h3>📊 Statistics</h3>\n        <ul>\n            <li>Total Topics: ${data.totalTopics}</li>\n            <li>AI Recommendations: ${data.aiRecommendations}</li>\n            <li>Trending Topics: ${data.trendingTopics}</li>\n            <li>Last Updated: ${new Date(data.timestamp).toLocaleString()}</li>\n        </ul>\n    </div>\n    \n    <h3>🔥 Top Topics</h3>\n    ${data.topics.slice(0, 10).map((topic, i) => \n        `<div class=\"topic ${topic.type === 'AI Recommendation' ? 'ai-topic' : 'trending-topic'}\">\n            <strong>${i+1}. ${topic.topic}</strong>\n            <br><small>Type: ${topic.type} | Source: ${topic.source}</small>\n        </div>`\n    ).join('')}\n    \n    <hr>\n    <p><small>Generated by n8n automation at ${new Date().toISOString()}</small></p>\n</body>\n</html>`;\n\nreturn [{ json: { htmlContent, data } }];"
+      },
+      "id": "generate-email-content",
+      "name": "Generate Email Content",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@yourdomain.com",
+        "toEmail": "admin@yourdomain.com",
+        "subject": "🤖 AI Search Dashboard - 4h Topics Update",
+        "emailType": "html",
+        "message": "={{ $json.htmlContent }}",
+        "options": {}
+      },
+      "id": "send-email-notification",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "table": "topic_updates",
+        "columns": "timestamp,total_topics,ai_recommendations,trending_topics,topics_json",
+        "values": "={{ $json.timestamp }},={{ $json.totalTopics }},={{ $json.aiRecommendations }},={{ $json.trendingTopics }},={{ JSON.stringify($json.topics) }}",
+        "options": {}
+      },
+      "id": "save-to-database",
+      "name": "Save to Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Log the automation execution\nconst data = $input.first().json;\nconst timestamp = new Date().toISOString();\n\nconst logEntry = {\n  timestamp,\n  automation: '4h_topic_updates',\n  status: 'completed',\n  totalTopics: data.totalTopics,\n  aiRecommendations: data.aiRecommendations,\n  trendingTopics: data.trendingTopics,\n  executionTime: new Date().toISOString()\n};\n\nconsole.log('n8n Automation Completed:', JSON.stringify(logEntry, null, 2));\n\nreturn [{ json: logEntry }];"
+      },
+      "id": "log-execution",
+      "name": "Log Execution",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Trigger (4h)": {
+      "main": [
+        [
+          {
+            "node": "Trigger AI Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger AI Generation": {
+      "main": [
+        [
+          {
+            "node": "Analyze Twitter Trends",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Trigger Topic Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Twitter Trends": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Topic Search": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Get New Topics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Trending Topics",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Twitter Tweets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get New Topics": {
+      "main": [
+        [
+          {
+            "node": "Process Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Trending Topics": {
+      "main": [
+        [
+          {
+            "node": "Process Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Topics": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Twitter Tweets": {
+      "main": [
+        [
+          {
+            "node": "Generate Email Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Email Content": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Log Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-10-23T08:20:00.000Z",
+      "updatedAt": "2025-10-23T08:20:00.000Z",
+      "id": "topic-automation",
+      "name": "Topic Automation"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-10-23T08:20:00.000Z",
+  "versionId": "1"
+}

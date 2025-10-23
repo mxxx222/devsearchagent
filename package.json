@@ -1,0 +1,25 @@
+{
+  "name": "testprojekt22.10.25",
+  "version": "1.0.0",
+  "description": "A modern web dashboard for search analytics, trending topics, and AI-powered recommendations.",
+  "main": "index.js",
+  "scripts": {
+    "start": "source venv/bin/activate && python app.py",
+    "dev": "source venv/bin/activate && python app.py",
+    "automation": "source venv/bin/activate && python topic_automation.py",
+    "automation-test": "source venv/bin/activate && python topic_automation.py --once",
+    "n8n": "n8n start",
+    "test": "source venv/bin/activate && python test_automation.py",
+    "install-deps": "source venv/bin/activate && pip install -r requirements.txt",
+    "setup": "npm run install-deps && npm run test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.12.2",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.10"
+  }
+}
