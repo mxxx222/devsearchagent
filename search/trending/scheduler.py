@@ -10,7 +10,6 @@ from typing import Dict, Any, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.jobstores.memory import MemoryJobStore
-from apscheduler.executors.asyncio import AsyncIOExecutor
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 
 from .detector import XTrendingDetector
@@ -29,13 +28,10 @@ class TopicSearchScheduler:
         self.analyzer = XTrendingAnalyzer()
         self.storage = TrendingStorage(self.config.get('database_url', 'sqlite:///trending_data.db'))
 
-        # Initialize scheduler
+        # Initialize scheduler (without AsyncIOExecutor to avoid event loop issues)
         self.scheduler = BackgroundScheduler(
             jobstores={
                 'default': MemoryJobStore()
-            },
-            executors={
-                'default': AsyncIOExecutor()
             },
             job_defaults={
                 'coalesce': True,

@@ -193,4 +193,5 @@ if __name__ == '__main__':
     print("   GET  /api/n8n/health")
     print("🌐 Server will run on http://localhost:8081")
     
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=8081, debug=debug_mode)

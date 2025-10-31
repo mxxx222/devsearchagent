@@ -26,7 +26,12 @@ class TrendingStorage:
         Base.metadata.create_all(bind=self.engine)
 
         # Initialize aggregation service
-        # self.aggregation_service = EngagementAggregationService(self)  # Temporarily disabled due to circular import
+        try:
+            from .aggregation import EngagementAggregationService
+            self.aggregation_service = EngagementAggregationService(self)
+        except ImportError as e:
+            logger.warning(f"Could not initialize aggregation service: {e}")
+            self.aggregation_service = None
 
     def save_search_result(self, result: TopicSearchResult) -> bool:
         """Save a topic search result to database"""
@@ -379,12 +384,18 @@ class TrendingStorage:
     # Aggregation methods
     def run_daily_aggregation(self, date: datetime = None) -> int:
         """Run daily aggregation for engagement metrics"""
+        if self.aggregation_service is None:
+            logger.warning("Aggregation service not available")
+            return 0
         if not date:
             date = datetime.now(UTC)
         return self.aggregation_service.aggregate_daily_metrics(date)
 
     def run_monthly_aggregation(self, year: int = None, month: int = None) -> int:
         """Run monthly aggregation for engagement metrics"""
+        if self.aggregation_service is None:
+            logger.warning("Aggregation service not available")
+            return 0
         if not year or not month:
             now = datetime.now(UTC)
             year = now.year
@@ -393,12 +404,18 @@ class TrendingStorage:
 
     def run_yearly_aggregation(self, year: int = None) -> int:
         """Run yearly aggregation for engagement metrics"""
+        if self.aggregation_service is None:
+            logger.warning("Aggregation service not available")
+            return 0
         if not year:
             year = datetime.now(UTC).year
         return self.aggregation_service.aggregate_yearly_metrics(year)
 
     def update_engagement_summaries(self, period: str, start_date: datetime = None, end_date: datetime = None) -> int:
         """Update engagement summaries for a date range"""
+        if self.aggregation_service is None:
+            logger.warning("Aggregation service not available")
+            return 0
         if not start_date:
             start_date = datetime.now(UTC) - timedelta(days=1)
         if not end_date:

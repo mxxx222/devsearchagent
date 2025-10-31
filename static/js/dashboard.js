@@ -1,506 +1,317 @@
-// Dashboard JavaScript functionality
-
+// AI Code Agent - Modern Dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    initializeDashboard();
+    initializeApp();
 });
 
-function initializeDashboard() {
-    setupSearchForm();
-    loadTrendingData();
-    loadAIRecommendations();
-    loadEngagementData();
-    loadTopEngagedTopics();
-    initializeCharts();
-    setupAIRecommendationsFilter();
-    setupNewTopicsRefresh();
-    loadQuickStats();
-    updateLastUpdateTime();
+function initializeApp() {
+    setupQuickSearch();
+    setupFileTree();
+    setupTabs();
+    setupAIChat();
+    setupTerminal();
+    loadProjectData();
+    updateStatusIndicators();
+    
+    // Start auto-refresh
+    setInterval(updateStatusIndicators, 30000);
 }
 
-function setupSearchForm() {
-    const form = document.getElementById('searchForm');
-    const input = document.getElementById('searchInput');
-
-    form.addEventListener('submit', function(e) {
+// Quick Search (Cmd+K)
+function setupQuickSearch() {
+    const quickSearch = document.getElementById('quickSearch');
+    
+    // Keyboard shortcut
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        const query = input.value.trim();
-        if (query) {
-            performSearch(query);
+            quickSearch.focus();
+        }
+    });
+    
+    quickSearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            this.blur();
         }
     });
 }
 
-async function performSearch(query) {
-    const resultsContainer = document.getElementById('resultsContainer');
-
-    // Show loading state
-    resultsContainer.innerHTML = '<p class="placeholder">Searching...</p>';
-
-    try {
-        const response = await fetch('/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `query=${encodeURIComponent(query)}`
-        });
-
-        const data = await response.json();
-        displaySearchResults(data.results);
-    } catch (error) {
-        console.error('Search error:', error);
-        resultsContainer.innerHTML = '<p class="placeholder">Error performing search. Please try again.</p>';
-    }
+// File Tree Expand/Collapse
+function setupFileTree() {
+    const fileItems = document.querySelectorAll('.file-item');
+    
+    fileItems.forEach(item => {
+        const caret = item.querySelector('.fa-caret-down, .fa-caret-right');
+        if (caret) {
+            item.addEventListener('click', function() {
+                caret.classList.toggle('fa-caret-down');
+                caret.classList.toggle('fa-caret-right');
+            });
+        }
+    });
 }
 
-function displaySearchResults(results) {
-    const resultsContainer = document.getElementById('resultsContainer');
-
-    if (results.length === 0) {
-        resultsContainer.innerHTML = '<p class="placeholder">No results found.</p>';
-        return;
-    }
-
-    const resultsHtml = results.map(result => `
-        <div class="search-result">
-            <h3><a href="${result.url}" target="_blank">${result.title}</a></h3>
-            <p>${result.description}</p>
-        </div>
-    `).join('');
-
-    resultsContainer.innerHTML = resultsHtml;
-}
-
-async function loadTrendingData() {
-    try {
-        const response = await fetch('/api/trending');
-        const data = await response.json();
-        displayTrendingData(data);
-        updateTrendingChart(data);
-    } catch (error) {
-        console.error('Error loading trending data:', error);
-    }
-}
-
-function displayTrendingData(data) {
-    const trendingList = document.getElementById('trendingList');
-
-    const trendingHtml = data.map(item => `
-        <div class="trending-item">
-            <span class="trending-topic">${item.topic}</span>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <span class="trending-score">${item.score}</span>
-                <span class="trending-change">${item.change}</span>
-            </div>
-        </div>
-    `).join('');
-
-    trendingList.innerHTML = trendingHtml;
-}
-
-function initializeCharts() {
-    // Chart.js initialization will happen when data is loaded
-    setupEngagementControls();
-}
-
-function updateTrendingChart(data) {
-    const ctx = document.getElementById('trendingChart').getContext('2d');
-
-    const labels = data.map(item => item.topic);
-    const scores = data.map(item => item.score);
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Trending Score',
-                data: scores,
-                backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                borderColor: 'rgba(102, 126, 234, 1)',
-                borderWidth: 1,
-                borderRadius: 5,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeOutQuart'
+// Tab Management
+function setupTabs() {
+    const tabs = document.querySelectorAll('.tab-item');
+    const closeBtns = document.querySelectorAll('.close-tab');
+    const tabBtn = document.querySelector('.tab-btn');
+    
+    // Switch tabs
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('close-tab')) {
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
             }
+        });
+    });
+    
+    // Close tabs
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tab = this.closest('.tab-item');
+            const isActive = tab.classList.contains('active');
+            
+            tab.remove();
+            
+            // Activate another tab if current was closed
+            if (isActive) {
+                const remainingTabs = document.querySelectorAll('.tab-item');
+                if (remainingTabs.length > 0) {
+                    remainingTabs[0].classList.add('active');
+                }
+            }
+        });
+    });
+    
+    // Add new tab
+    if (tabBtn) {
+        tabBtn.addEventListener('click', function() {
+            // Would open file picker in real app
+            console.log('Open file picker');
+        });
+    }
+}
+
+// AI Chat
+function setupAIChat() {
+    const aiInput = document.querySelector('.ai-input');
+    const sendBtn = document.querySelector('.send-btn');
+    
+    function sendMessage() {
+        const message = aiInput.value.trim();
+        if (message) {
+            addAIMessage(message);
+            aiInput.value = '';
+        }
+    }
+    
+    sendBtn.addEventListener('click', sendMessage);
+    aiInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
         }
     });
 }
 
-async function loadAIRecommendations() {
-    try {
-        const response = await fetch('/api/recommendations');
-        const data = await response.json();
-        displayAIRecommendations(data);
-    } catch (error) {
-        console.error('Error loading AI recommendations:', error);
-    }
-}
-
-function displayAIRecommendations(data) {
-    const recommendationsList = document.getElementById('recommendationsList');
-
-    if (!data || data.length === 0) {
-        recommendationsList.innerHTML = '<p class="placeholder">No AI recommendations available</p>';
-        return;
-    }
-
-    const recommendationsHtml = data.map(item => `
-        <div class="recommendation-item">
-            <div class="recommendation-header">
-                <span class="recommendation-topic">${item.topic}</span>
-                <span class="recommendation-source source-${item.source}">${item.source}</span>
-            </div>
-            <div class="recommendation-category">${item.category}</div>
-            <div class="recommendation-confidence">Confidence: ${(item.confidence * 100).toFixed(1)}%</div>
-            <div class="confidence-bar">
-                <div class="confidence-fill" style="width: ${item.confidence * 100}%"></div>
-            </div>
-            ${item.reasoning ? `<div class="recommendation-reasoning">${item.reasoning}</div>` : ''}
-            ${item.related_topics && item.related_topics.length > 0 ? `
-                <div class="related-topics">
-                    <small>Related: ${item.related_topics.slice(0, 3).join(', ')}</small>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-
-    recommendationsList.innerHTML = recommendationsHtml;
-}
-// Auto-refresh trending data every 30 seconds
-setInterval(loadTrendingData, 30000);
-setInterval(loadAIRecommendations, 30000);
-setInterval(loadEngagementData, 30000);
-setInterval(loadTopEngagedTopics, 30000);
-
-async function loadEngagementData() {
-    try {
-        const period = document.getElementById('engagementPeriod').value;
-        const response = await fetch(`/api/engagement/summary?period=${period}`);
-        const data = await response.json();
-
-        if (data && data.total_likes !== undefined) {
-            displayEngagementSummary(data);
-            updateEngagementChart(data);
-        }
-    } catch (error) {
-        console.error('Error loading engagement data:', error);
-    }
-}
-
-function displayEngagementSummary(data) {
-    const summaryContainer = document.getElementById('engagementSummary');
-    const period = document.getElementById('engagementPeriod').value;
-    const metric = document.getElementById('engagementMetric').value;
-
-    const metricValue = data[`total_${metric}`] || 0;
-
-    summaryContainer.innerHTML = `
-        <div class="engagement-metric">
-            <span class="metric-label">${period.charAt(0).toUpperCase() + period.slice(1)} ${metric}:</span>
-            <span class="metric-value">${metricValue.toLocaleString()}</span>
-        </div>
-        <div class="engagement-metric">
-            <span class="metric-label">Avg Engagement Score:</span>
-            <span class="metric-value">${data.avg_engagement_score?.toFixed(2) || '0.00'}</span>
-        </div>
-        <div class="engagement-metric">
-            <span class="metric-label">Topics Tracked:</span>
-            <span class="metric-value">${data.topic_count || 0}</span>
+function addAIMessage(userMessage) {
+    const messagesContainer = document.getElementById('aiMessages');
+    
+    // User message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'ai-message';
+    userMsg.innerHTML = `
+        <div class="message-avatar">👤</div>
+        <div class="message-content">
+            <p>${userMessage}</p>
         </div>
     `;
+    messagesContainer.appendChild(userMsg);
+    
+    // Simulate AI response
+    setTimeout(() => {
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'ai-message';
+        aiMsg.innerHTML = `
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+                <p>I understand your request. Let me help you with that...</p>
+            </div>
+        `;
+        messagesContainer.appendChild(aiMsg);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 500);
+    
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function updateEngagementChart(data) {
-    const ctx = document.getElementById('engagementChart').getContext('2d');
-    const metric = document.getElementById('engagementMetric').value;
+// Terminal
+function setupTerminal() {
+    const terminal = document.querySelector('.terminal');
+    
+    // Simulate terminal output
+    setTimeout(() => {
+        const output = terminal.querySelector('.terminal-output');
+        const newLine = document.createElement('div');
+        newLine.textContent = '> Ready for commands';
+        output.appendChild(newLine);
+    }, 2000);
+}
 
-    // For now, show a simple bar chart with current period data
-    // In a full implementation, this would show time-series data
-    const labels = ['Likes', 'Shares', 'Comments'];
-    const values = [data.total_likes || 0, data.total_shares || 0, data.total_comments || 0];
+// Load Project Data
+async function loadProjectData() {
+    try {
+        // Load trending topics
+        const trendingResponse = await fetch('/api/trending?limit=10');
+        if (trendingResponse.ok) {
+            const data = await trendingResponse.json();
+            console.log('Loaded trending topics:', data);
+        }
+        
+        // Load engagement data
+        const engagementResponse = await fetch('/api/engagement/summary?period=daily');
+        if (engagementResponse.ok) {
+            const data = await engagementResponse.json();
+            console.log('Loaded engagement data:', data);
+        }
+    } catch (error) {
+        console.error('Error loading project data:', error);
+    }
+}
 
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Engagement Metrics',
-                data: values,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.6)',
-                    'rgba(54, 162, 235, 0.6)',
-                    'rgba(255, 205, 86, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 205, 86, 1)'
-                ],
-                borderWidth: 1,
-                borderRadius: 5,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.1)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeOutQuart'
+// Update Status Indicators
+function updateStatusIndicators() {
+    // Update activity list
+    updateActivityLog();
+    
+    // Update insights
+    updateInsights();
+}
+
+function updateActivityLog() {
+    const activityList = document.querySelector('.activity-list');
+    const firstActivity = activityList.querySelector('.activity-item');
+    
+    // Simulate new activity
+    if (firstActivity && Math.random() > 0.7) {
+        const activities = [
+            { icon: 'fa-code', action: 'Code committed', time: 'just now' },
+            { icon: 'fa-check', action: 'Tests passed', time: '1 min ago' },
+            { icon: 'fa-sync', action: 'Project synced', time: '2 min ago' },
+        ];
+        
+        const activity = activities[Math.floor(Math.random() * activities.length)];
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.innerHTML = `
+            <div class="activity-icon"><i class="fas ${activity.icon}"></i></div>
+            <div class="activity-content">
+                <span class="activity-action">${activity.action}</span>
+                <span class="activity-time">${activity.time}</span>
+        </div>
+    `;
+        
+        activityList.insertBefore(activityItem, firstActivity);
+        
+        // Remove old activities if too many
+        const items = activityList.querySelectorAll('.activity-item');
+        if (items.length > 10) {
+            items[items.length - 1].remove();
+        }
+    }
+}
+
+function updateInsights() {
+    // Update insight values with slight variations
+    const insightValues = document.querySelectorAll('.insight-value');
+    insightValues.forEach(value => {
+        const current = parseInt(value.textContent);
+        if (!isNaN(current)) {
+            const variation = Math.floor(Math.random() * 3 - 1); // -1, 0, or 1
+            const newValue = Math.max(0, Math.min(100, current + variation));
+            if (newValue !== current) {
+                value.textContent = newValue + '%';
             }
         }
     });
 }
 
-async function loadTopEngagedTopics() {
+// Search functionality
+async function performSearch(query) {
     try {
-        const period = document.getElementById('engagementPeriod').value;
-        const metric = document.getElementById('engagementMetric').value;
-        const response = await fetch(`/api/engagement/topics/top?period=${period}&metric=${metric}&limit=10`);
-        const topics = await response.json();
-
-        displayTopEngagedTopics(topics);
-    } catch (error) {
-        console.error('Error loading top engaged topics:', error);
-    }
-}
-
-function displayTopEngagedTopics(topics) {
-    const container = document.getElementById('topEngagedList');
-
-    if (!topics || topics.length === 0) {
-        container.innerHTML = '<p class="placeholder">No engagement data available</p>';
-        return;
-    }
-
-    const metric = document.getElementById('engagementMetric').value;
-    const topicsHtml = topics.map((topic, index) => `
-        <div class="top-engaged-item">
-            <span class="rank">#${index + 1}</span>
-            <div class="topic-info">
-                <span class="topic-name">${topic.topic}</span>
-                <span class="topic-category">${topic.category}</span>
-            </div>
-            <span class="engagement-count">${(topic[`total_${metric}`] || 0).toLocaleString()}</span>
-        </div>
-    `).join('');
-
-    container.innerHTML = topicsHtml;
-}
-
-function setupEngagementControls() {
-    const periodSelect = document.getElementById('engagementPeriod');
-    const metricSelect = document.getElementById('engagementMetric');
-
-    periodSelect.addEventListener('change', () => {
-        loadEngagementData();
-        loadTopEngagedTopics();
-    });
-
-    metricSelect.addEventListener('change', () => {
-        loadEngagementData();
-        loadTopEngagedTopics();
-    });
-}
-
-// AI Recommendations Filter Setup
-function setupAIRecommendationsFilter() {
-    const sourceButtons = document.querySelectorAll('.source-btn');
-    
-    sourceButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            sourceButtons.forEach(btn => btn.classList.remove('active'));
-            
-            // Add active class to clicked button
-            this.classList.add('active');
-            
-            // Load recommendations for selected source
-            const source = this.dataset.source;
-            loadAIRecommendations(source);
+        const response = await fetch('/api/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query })
         });
-    });
-}
-
-// New Topics Refresh Setup
-function setupNewTopicsRefresh() {
-    const refreshBtn = document.getElementById('refreshTopics');
-    
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
-            loadNewTopics();
-            updateLastUpdateTime();
-        });
-    }
-}
-
-// Load New Topics (4-hour updates)
-async function loadNewTopics() {
-    try {
-        const response = await fetch('/api/trending?limit=5');
-        const topics = await response.json();
         
-        const container = document.getElementById('newTopicsList');
-        
-        if (topics && topics.length > 0) {
-            container.innerHTML = topics.map(topic => `
-                <div class="topic-item">
-                    <div class="topic-name">${topic.topic}</div>
-                    <div class="topic-score">Score: ${topic.score}</div>
-                    <div class="topic-category">${topic.category}</div>
-                </div>
-            `).join('');
-        } else {
-            container.innerHTML = '<p class="placeholder">No new topics available</p>';
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Search results:', data);
+            return data.results || [];
         }
     } catch (error) {
-        console.error('Error loading new topics:', error);
-        document.getElementById('newTopicsList').innerHTML = '<p class="placeholder">Error loading topics</p>';
+        console.error('Search error:', error);
     }
+    return [];
 }
 
-// Load Quick Stats
-async function loadQuickStats() {
-    try {
-        const [trendingResponse, engagementResponse] = await Promise.all([
-            fetch('/api/trending?limit=1'),
-            fetch('/api/engagement/summary?period=daily')
-        ]);
+// Keyboard Shortcuts
+document.addEventListener('keydown', function(e) {
+    // Cmd/Ctrl + B - Toggle sidebar
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+        e.preventDefault();
+        const sidebar = document.querySelector('.left-sidebar');
+        sidebar.classList.toggle('hidden');
+    }
+    
+    // Cmd/Ctrl + J - Toggle bottom panel
+    if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
+        e.preventDefault();
+        const bottomPanel = document.querySelector('.bottom-panel');
+        bottomPanel.classList.toggle('hidden');
+    }
+});
+
+// Quick Actions
+document.querySelectorAll('.quick-action-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const action = this.querySelector('span').textContent;
+        console.log(`Quick action: ${action}`);
         
-        const trendingData = await trendingResponse.json();
-        const engagementData = await engagementResponse.json();
-        
-        const container = document.getElementById('quickStats');
-        
-        const totalTopics = trendingData ? trendingData.length : 0;
-        const totalEngagement = engagementData ? engagementData.total_engagement || 0 : 0;
-        const avgScore = trendingData && trendingData.length > 0 ? 
-            Math.round(trendingData.reduce((sum, topic) => sum + topic.score, 0) / trendingData.length) : 0;
-        const activeSources = 2; // OpenAI and Gemini
-        
-        container.innerHTML = `
-            <div class="stat-item">
-                <span class="stat-value">${totalTopics}</span>
-                <div class="stat-label">Active Topics</div>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${totalEngagement}</span>
-                <div class="stat-label">Total Engagement</div>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${avgScore}%</span>
-                <div class="stat-label">Avg Score</div>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value">${activeSources}</span>
-                <div class="stat-label">AI Sources</div>
+        // Add activity log entry
+        const activityList = document.querySelector('.activity-list');
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.innerHTML = `
+            <div class="activity-icon"><i class="fas fa-rocket"></i></div>
+            <div class="activity-content">
+                <span class="activity-action">${action} started</span>
+                <span class="activity-time">just now</span>
             </div>
         `;
-    } catch (error) {
-        console.error('Error loading quick stats:', error);
-    }
-}
-
-// Update Last Update Time
-function updateLastUpdateTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('fi-FI', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+        activityList.insertBefore(activityItem, activityList.firstChild);
     });
-    document.getElementById('lastUpdateTime').textContent = timeString;
+});
+
+// Agent Status Updates
+function updateAgentStatus() {
+    const statusDots = document.querySelectorAll('.status-dot');
+    statusDots.forEach(dot => {
+        // Simulate status changes
+        if (Math.random() > 0.95) {
+            dot.style.animation = 'none';
+            setTimeout(() => {
+                dot.style.animation = 'pulse 2s infinite';
+            }, 10);
+        }
+    });
 }
 
-// Enhanced AI Recommendations Loading with Source Filter
-async function loadAIRecommendations(source = 'all') {
-    try {
-        let url = '/api/recommendations?limit=10';
-        if (source !== 'all') {
-            url = `/api/recommendations/sources/${source}?limit=10`;
-        }
-        
-        const response = await fetch(url);
-        const recommendations = await response.json();
-        
-        const container = document.getElementById('recommendationsList');
-        
-        if (recommendations && recommendations.length > 0) {
-            container.innerHTML = recommendations.map(rec => `
-                <div class="recommendation-item">
-                    <div class="recommendation-topic">${rec.topic || rec.query}</div>
-                    <div class="recommendation-confidence">
-                        Confidence: ${Math.round((rec.confidence || 0) * 100)}%
-                    </div>
-                    <div class="recommendation-source">
-                        Source: ${rec.source || 'AI'}
-                    </div>
-                    ${rec.reasoning ? `<div class="recommendation-reasoning">${rec.reasoning}</div>` : ''}
-                    ${rec.related_topics && rec.related_topics.length > 0 ? `
-                        <div class="related-topics">
-                            <small>Related: ${rec.related_topics.slice(0, 3).join(', ')}</small>
-                        </div>
-                    ` : ''}
-                </div>
-            `).join('');
-        } else {
-            container.innerHTML = '<p class="placeholder">No AI recommendations available</p>';
-        }
-    } catch (error) {
-        console.error('Error loading AI recommendations:', error);
-        document.getElementById('recommendationsList').innerHTML = '<p class="placeholder">Error loading recommendations</p>';
-    }
-}
+// Initialize agent status updates
+setInterval(updateAgentStatus, 5000);
 
-// Auto-refresh new topics every 4 hours
-setInterval(() => {
-    loadNewTopics();
-    updateLastUpdateTime();
-}, 4 * 60 * 60 * 1000); // 4 hours in milliseconds
-
-// Auto-refresh trending data every 30 seconds
-setInterval(loadTrendingData, 30000);
-setInterval(loadAIRecommendations, 30000);
+console.log('🤖 AI Code Agent initialized');

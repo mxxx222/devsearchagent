@@ -3,97 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Dashboard</title>
+    <title>AI Code Agent - Project Control Center</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Search & Analytics Dashboard</h1>
-            <p>Real-time search insights and trending topics</p>
-        </header>
-
-        <div class="search-section">
-            <form id="searchForm">
-                <input type="text" id="searchInput" placeholder="Enter your search query..." required>
-                <button type="submit">Search</button>
-            </form>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <i class="fas fa-code"></i>
+                <span>AI Code Agent</span>
+            </div>
         </div>
+        <div class="nav-center">
+            <div class="quick-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="quickSearch" placeholder="Quick search... (Cmd+K)" />
+            </div>
+        </div>
+        <div class="nav-right">
+            <button class="nav-btn" title="Activity Log">
+                <i class="fas fa-history"></i>
+            </button>
+            <button class="nav-btn" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
+            <div class="user-profile">
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </div>
+    </nav>
 
-        <div class="main-layout">
-            <!-- Main Content Area -->
-            <div class="main-content">
-                <div class="dashboard-grid">
-                    <div class="widget search-results">
-                        <h2>Search Results</h2>
-                        <div id="resultsContainer">
-                            <p class="placeholder">Enter a search query to see results</p>
-                        </div>
+    <div class="main-app-container">
+        <!-- Left Sidebar -->
+        <aside class="left-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3>PROJECTS</h3>
+                    <button class="icon-btn" title="New Project">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="project-list">
+                    <div class="project-item active">
+                        <i class="fas fa-folder-open"></i>
+                        <span>Current Project</span>
                     </div>
-
-                    <div class="widget trending">
-                        <h2>Trending Topics</h2>
-                        <div class="chart-container">
-                            <canvas id="trendingChart"></canvas>
-                        </div>
-                        <div id="trendingList" class="trending-list"></div>
+                    <div class="project-item">
+                        <i class="fas fa-folder"></i>
+                        <span>Side Project</span>
                     </div>
-
-                    <div class="widget engagement">
-                        <h2>Engagement Analytics</h2>
-                        <div class="engagement-controls">
-                            <select id="engagementPeriod">
-                                <option value="daily">Daily</option>
-                                <option value="monthly">Monthly</option>
-                                <option value="yearly">Yearly</option>
-                            </select>
-                            <select id="engagementMetric">
-                                <option value="likes">Likes</option>
-                                <option value="shares">Shares</option>
-                                <option value="comments">Comments</option>
-                            </select>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="engagementChart"></canvas>
-                        </div>
-                        <div id="engagementSummary" class="engagement-summary"></div>
-                    </div>
-
-                    <div class="widget top-engaged">
-                        <h2>Top Engaged Topics</h2>
-                        <div id="topEngagedList" class="top-engaged-list"></div>
+                    <div class="project-item">
+                        <i class="fas fa-folder"></i>
+                        <span>Learning Project</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar with AI Recommendations -->
-            <div class="sidebar">
-                <div class="widget ai-recommendations">
-                    <h2>🤖 AI Recommendations</h2>
-                    <div class="ai-sources">
-                        <button class="source-btn active" data-source="all">All Sources</button>
-                        <button class="source-btn" data-source="openai">OpenAI</button>
-                        <button class="source-btn" data-source="gemini">Gemini</button>
-                    </div>
-                    <div id="recommendationsList" class="recommendations-list"></div>
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3>FILES</h3>
+                    <button class="icon-btn" title="New File">
+                        <i class="fas fa-plus"></i>
+                    </button>
                 </div>
-
-                <div class="widget new-topics">
-                    <h2>🕐 New Topics (4h Updates)</h2>
-                    <div class="update-indicator">
-                        <span class="last-update">Last update: <span id="lastUpdateTime">--:--</span></span>
-                        <button id="refreshTopics" class="refresh-btn">🔄 Refresh</button>
+                <div class="file-tree">
+                    <div class="file-item">
+                        <i class="fas fa-caret-down"></i>
+                        <i class="fab fa-python"></i>
+                        <span>src</span>
                     </div>
-                    <div id="newTopicsList" class="new-topics-list"></div>
-                </div>
-
-                <div class="widget trending-summary">
-                    <h2>📊 Quick Stats</h2>
-                    <div id="quickStats" class="quick-stats"></div>
+                    <div class="file-item indent">
+                        <i class="far fa-file-code"></i>
+                        <span>app.py</span>
+                    </div>
+                    <div class="file-item indent">
+                        <i class="far fa-file-code"></i>
+                        <span>config.py</span>
+                    </div>
+                    <div class="file-item">
+                        <i class="fas fa-caret-right"></i>
+                        <i class="fab fa-js"></i>
+                        <span>static</span>
+                    </div>
+                    <div class="file-item">
+                        <i class="fas fa-caret-right"></i>
+                        <i class="fab fa-html5"></i>
+                        <span>templates</span>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3>AI AGENTS</h3>
+                </div>
+                <div class="agent-list">
+                    <div class="agent-item active">
+                        <div class="agent-icon">🤖</div>
+                        <div class="agent-info">
+                            <span class="agent-name">Code Assistant</span>
+                            <span class="agent-status">Ready</span>
+                        </div>
+                    </div>
+                    <div class="agent-item">
+                        <div class="agent-icon">🔍</div>
+                        <div class="agent-info">
+                            <span class="agent-name">Analytics Agent</span>
+                            <span class="agent-status">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content-area">
+            <!-- Tab Bar -->
+            <div class="tab-bar">
+                <div class="tab-item active">
+                    <i class="fab fa-python"></i>
+                    <span>app.py</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="tab-item">
+                    <i class="far fa-file-code"></i>
+                    <span>config.py</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="tab-btn">+</div>
+            </div>
+
+            <!-- Editor/Content Area -->
+            <div class="editor-container">
+                <div class="editor-header">
+                    <div class="editor-title">
+                        <i class="fab fa-python"></i>
+                        <span>app.py</span>
+                    </div>
+                    <div class="editor-actions">
+                        <button class="action-btn" title="AI Chat">
+                            <i class="fas fa-comments"></i>
+                            <span>AI Chat</span>
+                        </button>
+                        <button class="action-btn" title="Run">
+                            <i class="fas fa-play"></i>
+                            <span>Run</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="content-panels">
+                    <!-- Code Editor Panel -->
+                    <div class="panel-left">
+                        <div class="code-editor">
+                            <div class="line-numbers"></div>
+                            <div class="code-area">
+                                <pre><code># AI Code Agent - Project Management
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('dashboard.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Assistant Panel -->
+                    <div class="panel-right">
+                        <div class="ai-panel">
+                            <div class="ai-header">
+                                <h3><i class="fas fa-robot"></i> AI Assistant</h3>
+                                <div class="ai-status">
+                                    <span class="status-dot"></span>
+                                    <span>Online</span>
+                                </div>
+                            </div>
+                            <div class="ai-messages" id="aiMessages">
+                                <div class="ai-message">
+                                    <div class="message-avatar">🤖</div>
+                                    <div class="message-content">
+                                        <p>Hello! I'm your AI code assistant. I can help you with:</p>
+                                        <ul>
+                                            <li>Code generation and optimization</li>
+                                            <li>Debugging and refactoring</li>
+                                            <li>Project architecture suggestions</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ai-input-area">
+                                <input type="text" class="ai-input" placeholder="Ask anything about your code..." />
+                                <button class="send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Panel (Terminal/Logs) -->
+            <div class="bottom-panel">
+                <div class="panel-tabs">
+                    <div class="panel-tab active">Terminal</div>
+                    <div class="panel-tab">Logs</div>
+                    <div class="panel-tab">Problems</div>
+                </div>
+                <div class="panel-content">
+                    <div class="terminal">
+                        <pre class="terminal-output">$ Starting AI Code Agent...
+✓ Flask app running on http://localhost:8080
+✓ AI Assistant connected
+✓ All systems operational
+
+Ready for commands. Type 'help' for available options.</pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3>INSIGHTS</h3>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Code Quality</span>
+                    </div>
+                    <div class="insight-value">94%</div>
+                    <div class="insight-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+5% from yesterday</span>
+                    </div>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <i class="fas fa-bug"></i>
+                        <span>Issues</span>
+                    </div>
+                    <div class="insight-value">3</div>
+                    <div class="insight-trend warning">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>-2 from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Test Coverage</span>
+                    </div>
+                    <div class="insight-value">87%</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3>ACTIVITIES</h3>
+                    <button class="icon-btn" title="Clear">
+                        <i class="fas fa-broom"></i>
+                    </button>
+                </div>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-icon"><i class="fas fa-code"></i></div>
+                        <div class="activity-content">
+                            <span class="activity-action">Code committed</span>
+                            <span class="activity-time">2 min ago</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon"><i class="fas fa-check"></i></div>
+                        <div class="activity-content">
+                            <span class="activity-action">Tests passed</span>
+                            <span class="activity-time">5 min ago</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon"><i class="fas fa-sync"></i></div>
+                        <div class="activity-content">
+                            <span class="activity-action">Project synced</span>
+                            <span class="activity-time">10 min ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-header">
+                    <h3>QUICK ACTIONS</h3>
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-action-btn">
+                        <i class="fas fa-rocket"></i>
+                        <span>Deploy</span>
+                    </button>
+                    <button class="quick-action-btn">
+                        <i class="fas fa-database"></i>
+                        <span>Database</span>
+                    </button>
+                    <button class="quick-action-btn">
+                        <i class="fas fa-cloud"></i>
+                        <span>Cloud Sync</span>
+                    </button>
+                    <button class="quick-action-btn">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Security</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>

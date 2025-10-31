@@ -9,14 +9,18 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 try:
     from .models import EngagementMetrics, EngagementSummary, TopicSearchResult
-    from .storage import TrendingStorage
+    from ..base import TrendingStorage
 except ImportError:
-    # For direct testing
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from models import EngagementMetrics, EngagementSummary, TopicSearchResult
-    from storage import TrendingStorage
+    try:
+        from .models import EngagementMetrics, EngagementSummary, TopicSearchResult
+        from .storage import TrendingStorage
+    except ImportError:
+        # For direct testing
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from models import EngagementMetrics, EngagementSummary, TopicSearchResult
+        from storage import TrendingStorage
 
 logger = logging.getLogger(__name__)
 

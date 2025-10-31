@@ -108,8 +108,8 @@ class SearchManager:
     def _initialize_trending(self):
         """Initialize trending components"""
         try:
-            from .trending import TrendDetector, TrendStorage
-            self.trend_storage = TrendStorage(db_path="trends.db")
+            from .trending import TrendDetector, TrendingStorage
+            self.trend_storage = TrendingStorage(database_url="sqlite:///trends.db")
             self.trend_detector = TrendDetector(self.trend_storage)
             logger.info("Trending components initialized")
         except Exception as e:
