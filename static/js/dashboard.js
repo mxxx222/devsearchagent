@@ -1,245 +1,47 @@
-// AI Code Agent - Modern Dashboard
+// AI Search Dashboard - Simplified
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    initializeDashboard();
 });
 
-function initializeApp() {
-    setupQuickSearch();
-    setupFileTree();
-    setupTabs();
-    setupAIChat();
-    setupTerminal();
-    loadProjectData();
-    updateStatusIndicators();
+function initializeDashboard() {
+    setupSearch();
+    loadTrendingArticles();
     
-    // Start auto-refresh
-    setInterval(updateStatusIndicators, 30000);
-}
-
-// Quick Search (Cmd+K)
-function setupQuickSearch() {
-    const quickSearch = document.getElementById('quickSearch');
-    
-    // Keyboard shortcut
-    document.addEventListener('keydown', function(e) {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-            quickSearch.focus();
-        }
-    });
-    
-    quickSearch.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            this.blur();
-        }
-    });
-}
-
-// File Tree Expand/Collapse
-function setupFileTree() {
-    const fileItems = document.querySelectorAll('.file-item');
-    
-    fileItems.forEach(item => {
-        const caret = item.querySelector('.fa-caret-down, .fa-caret-right');
-        if (caret) {
-            item.addEventListener('click', function() {
-                caret.classList.toggle('fa-caret-down');
-                caret.classList.toggle('fa-caret-right');
-            });
-        }
-    });
-}
-
-// Tab Management
-function setupTabs() {
-    const tabs = document.querySelectorAll('.tab-item');
-    const closeBtns = document.querySelectorAll('.close-tab');
-    const tabBtn = document.querySelector('.tab-btn');
-    
-    // Switch tabs
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
-            if (!e.target.classList.contains('close-tab')) {
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            }
-        });
-    });
-    
-    // Close tabs
-    closeBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const tab = this.closest('.tab-item');
-            const isActive = tab.classList.contains('active');
-            
-            tab.remove();
-            
-            // Activate another tab if current was closed
-            if (isActive) {
-                const remainingTabs = document.querySelectorAll('.tab-item');
-                if (remainingTabs.length > 0) {
-                    remainingTabs[0].classList.add('active');
-                }
-            }
-        });
-    });
-    
-    // Add new tab
-    if (tabBtn) {
-        tabBtn.addEventListener('click', function() {
-            // Would open file picker in real app
-            console.log('Open file picker');
-        });
-    }
-}
-
-// AI Chat
-function setupAIChat() {
-    const aiInput = document.querySelector('.ai-input');
-    const sendBtn = document.querySelector('.send-btn');
-    
-    function sendMessage() {
-        const message = aiInput.value.trim();
-        if (message) {
-            addAIMessage(message);
-            aiInput.value = '';
-        }
-    }
-    
-    sendBtn.addEventListener('click', sendMessage);
-    aiInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
-}
-
-function addAIMessage(userMessage) {
-    const messagesContainer = document.getElementById('aiMessages');
-    
-    // User message
-    const userMsg = document.createElement('div');
-    userMsg.className = 'ai-message';
-    userMsg.innerHTML = `
-        <div class="message-avatar">👤</div>
-        <div class="message-content">
-            <p>${userMessage}</p>
-        </div>
-    `;
-    messagesContainer.appendChild(userMsg);
-    
-    // Simulate AI response
-    setTimeout(() => {
-        const aiMsg = document.createElement('div');
-        aiMsg.className = 'ai-message';
-        aiMsg.innerHTML = `
-            <div class="message-avatar">🤖</div>
-            <div class="message-content">
-                <p>I understand your request. Let me help you with that...</p>
-            </div>
-        `;
-        messagesContainer.appendChild(aiMsg);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }, 500);
-    
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-// Terminal
-function setupTerminal() {
-    const terminal = document.querySelector('.terminal');
-    
-    // Simulate terminal output
-    setTimeout(() => {
-        const output = terminal.querySelector('.terminal-output');
-        const newLine = document.createElement('div');
-        newLine.textContent = '> Ready for commands';
-        output.appendChild(newLine);
-    }, 2000);
-}
-
-// Load Project Data
-async function loadProjectData() {
-    try {
-        // Load trending topics
-        const trendingResponse = await fetch('/api/trending?limit=10');
-        if (trendingResponse.ok) {
-            const data = await trendingResponse.json();
-            console.log('Loaded trending topics:', data);
-        }
-        
-        // Load engagement data
-        const engagementResponse = await fetch('/api/engagement/summary?period=daily');
-        if (engagementResponse.ok) {
-            const data = await engagementResponse.json();
-            console.log('Loaded engagement data:', data);
-        }
-    } catch (error) {
-        console.error('Error loading project data:', error);
-    }
-}
-
-// Update Status Indicators
-function updateStatusIndicators() {
-    // Update activity list
-    updateActivityLog();
-    
-    // Update insights
-    updateInsights();
-}
-
-function updateActivityLog() {
-    const activityList = document.querySelector('.activity-list');
-    const firstActivity = activityList.querySelector('.activity-item');
-    
-    // Simulate new activity
-    if (firstActivity && Math.random() > 0.7) {
-        const activities = [
-            { icon: 'fa-code', action: 'Code committed', time: 'just now' },
-            { icon: 'fa-check', action: 'Tests passed', time: '1 min ago' },
-            { icon: 'fa-sync', action: 'Project synced', time: '2 min ago' },
-        ];
-        
-        const activity = activities[Math.floor(Math.random() * activities.length)];
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.innerHTML = `
-            <div class="activity-icon"><i class="fas ${activity.icon}"></i></div>
-            <div class="activity-content">
-                <span class="activity-action">${activity.action}</span>
-                <span class="activity-time">${activity.time}</span>
-        </div>
-    `;
-        
-        activityList.insertBefore(activityItem, firstActivity);
-        
-        // Remove old activities if too many
-        const items = activityList.querySelectorAll('.activity-item');
-        if (items.length > 10) {
-            items[items.length - 1].remove();
-        }
-    }
-}
-
-function updateInsights() {
-    // Update insight values with slight variations
-    const insightValues = document.querySelectorAll('.insight-value');
-    insightValues.forEach(value => {
-        const current = parseInt(value.textContent);
-        if (!isNaN(current)) {
-            const variation = Math.floor(Math.random() * 3 - 1); // -1, 0, or 1
-            const newValue = Math.max(0, Math.min(100, current + variation));
-            if (newValue !== current) {
-                value.textContent = newValue + '%';
-            }
-        }
-    });
+    // Refresh trending articles every 5 minutes
+    setInterval(loadTrendingArticles, 5 * 60 * 1000);
 }
 
 // Search functionality
-async function performSearch(query) {
+function setupSearch() {
+    const quickSearch = document.getElementById('quickSearch');
+    const searchBtn = document.getElementById('searchBtn');
+    
+    function performSearch() {
+        const query = quickSearch.value.trim();
+        if (!query) return;
+        
+        searchArticles(query);
+    }
+    
+    searchBtn.addEventListener('click', performSearch);
+    
+    quickSearch.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
+
+// Search articles
+async function searchArticles(query) {
     try {
+        const searchResultsSection = document.getElementById('searchResults');
+        const resultsContainer = document.getElementById('resultsContainer');
+        
+        // Show loading
+        resultsContainer.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Haetaan artikkeleita...</p></div>';
+        searchResultsSection.style.display = 'block';
+        
         const response = await fetch('/api/search', {
             method: 'POST',
             headers: {
@@ -250,68 +52,115 @@ async function performSearch(query) {
         
         if (response.ok) {
             const data = await response.json();
-            console.log('Search results:', data);
-            return data.results || [];
+            displaySearchResults(data.results || [], query);
+        } else {
+            resultsContainer.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Haku epäonnistui</p></div>';
         }
     } catch (error) {
         console.error('Search error:', error);
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Haku epäonnistui</p></div>';
     }
-    return [];
 }
 
-// Keyboard Shortcuts
-document.addEventListener('keydown', function(e) {
-    // Cmd/Ctrl + B - Toggle sidebar
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-        e.preventDefault();
-        const sidebar = document.querySelector('.left-sidebar');
-        sidebar.classList.toggle('hidden');
+// Display search results
+function displaySearchResults(results, query) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="empty-state"><i class="fas fa-search"></i><p>Ei tuloksia hakusanalle: ' + escapeHtml(query) + '</p></div>';
+        return;
     }
     
-    // Cmd/Ctrl + J - Toggle bottom panel
-    if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
-        e.preventDefault();
-        const bottomPanel = document.querySelector('.bottom-panel');
-        bottomPanel.classList.toggle('hidden');
-    }
-});
-
-// Quick Actions
-document.querySelectorAll('.quick-action-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const action = this.querySelector('span').textContent;
-        console.log(`Quick action: ${action}`);
-        
-        // Add activity log entry
-        const activityList = document.querySelector('.activity-list');
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.innerHTML = `
-            <div class="activity-icon"><i class="fas fa-rocket"></i></div>
-            <div class="activity-content">
-                <span class="activity-action">${action} started</span>
-                <span class="activity-time">just now</span>
+    let html = '<div class="results-list">';
+    results.forEach(result => {
+        html += `
+            <div class="result-item">
+                <h3><a href="${escapeHtml(result.url)}" target="_blank">${escapeHtml(result.title || 'Ei otsikkoa')}</a></h3>
+                <p class="result-meta">
+                    <span class="result-source">${escapeHtml(result.source || 'Unknown')}</span>
+                </p>
+                <p class="result-description">${escapeHtml(result.description || 'Ei kuvausta')}</p>
             </div>
         `;
-        activityList.insertBefore(activityItem, activityList.firstChild);
+    });
+    html += '</div>';
+    
+    resultsContainer.innerHTML = html;
+    
+    // Scroll to results
+    document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Load trending articles
+async function loadTrendingArticles() {
+    try {
+        const trendingArticles = document.getElementById('trendingArticles');
+        
+        // Show loading
+        trendingArticles.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Ladataan trendaavia artikkeleita...</p></div>';
+        
+        const response = await fetch('/api/trending/articles');
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayTrendingArticles(data.articles || []);
+        } else {
+            trendingArticles.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Artikkeleiden lataaminen epäonnistui</p></div>';
+        }
+    } catch (error) {
+        console.error('Error loading trending articles:', error);
+        const trendingArticles = document.getElementById('trendingArticles');
+        trendingArticles.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Artikkeleiden lataaminen epäonnistui</p></div>';
+    }
+}
+
+// Display trending articles
+function displayTrendingArticles(articles) {
+    const trendingArticles = document.getElementById('trendingArticles');
+    
+    if (articles.length === 0) {
+        trendingArticles.innerHTML = '<div class="empty-state"><i class="fas fa-fire"></i><p>Ei trendaavia artikkeleita tällä hetkellä</p></div>';
+        return;
+    }
+    
+    let html = '<div class="articles-grid">';
+    articles.forEach((article, index) => {
+        html += `
+            <div class="article-card">
+                <div class="article-number">${index + 1}</div>
+                <div class="article-content">
+                    <h3><a href="${escapeHtml(article.url)}" target="_blank">${escapeHtml(article.title || 'Ei otsikkoa')}</a></h3>
+                    <p class="article-meta">
+                        <span class="article-source"><i class="fas fa-tag"></i> ${escapeHtml(article.source || 'Unknown')}</span>
+                        ${article.topic ? `<span class="article-topic"><i class="fas fa-hashtag"></i> ${escapeHtml(article.topic)}</span>` : ''}
+                    </p>
+                    <p class="article-description">${escapeHtml(article.description || 'Ei kuvausta')}</p>
+                    ${article.score ? `<div class="article-score"><i class="fas fa-chart-line"></i> ${article.score}%</div>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    trendingArticles.innerHTML = html;
+}
+
+// Refresh button handler
+document.getElementById('refreshTrending').addEventListener('click', function() {
+    this.querySelector('i').classList.add('fa-spin');
+    loadTrendingArticles().finally(() => {
+        setTimeout(() => {
+            this.querySelector('i').classList.remove('fa-spin');
+        }, 500);
     });
 });
 
-// Agent Status Updates
-function updateAgentStatus() {
-    const statusDots = document.querySelectorAll('.status-dot');
-    statusDots.forEach(dot => {
-        // Simulate status changes
-        if (Math.random() > 0.95) {
-            dot.style.animation = 'none';
-            setTimeout(() => {
-                dot.style.animation = 'pulse 2s infinite';
-            }, 10);
-        }
-    });
+// Utility function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
-// Initialize agent status updates
-setInterval(updateAgentStatus, 5000);
-
-console.log('🤖 AI Code Agent initialized');
+console.log('🔍 AI Search Dashboard initialized');

@@ -116,6 +116,49 @@ MOCK_TRENDING_DATA = [
     {"topic": "Cloud Computing", "score": 75, "change": "+10%"}
 ]
 
+MOCK_TRENDING_ARTICLES = [
+    {
+        "title": "AI ja koodaaminen: tulevaisuuden kehitystyökalut",
+        "url": "https://example.com/ai-coding-tools",
+        "description": "Tutustu uusimpiin AI-pohjaisiin kehitystyökaluihin ja niiden vaikutukseen ohjelmistokehitykseen. Modernit ratkaisut kuten GitHub Copilot ja ChatGPT muuttavat tapaa, jolla koodaamme.",
+        "source": "Tech News",
+        "topic": "AI Development",
+        "score": 95
+    },
+    {
+        "title": "Machine Learning - opas aloittelijoille",
+        "url": "https://example.com/ml-beginners",
+        "description": "Selvitä miten konepohjainen oppiminen toimii ja miten voit aloittaa ensimmäisen ML-projektisi. Käytännöllisiä esimerkkejä ja resursseja alkuun pääsemiseksi.",
+        "source": "Data Science Blog",
+        "topic": "Machine Learning",
+        "score": 87
+    },
+    {
+        "title": "Web-kehityksen parhaat käytännöt 2025",
+        "url": "https://example.com/web-dev-best-practices",
+        "description": "Tutustu vuoden 2025 parhaisiin web-kehityksen käytäntöihin. Responsiivinen design, suorituskyky, saavutettavuus ja turvallisuus - kaikki mitä tarvitset tietää.",
+        "source": "Web Dev Magazine",
+        "topic": "Web Development",
+        "score": 78
+    },
+    {
+        "title": "Data Science - analytiikka ja visualisointi",
+        "url": "https://example.com/data-science-analytics",
+        "description": "Opi käyttämään datatiedettä liiketoiminnan päätöksenteossa. Käytännöllisiä vinkkejä datan keräämiseen, analysointiin ja visualisointiin modernien työkalujen avulla.",
+        "source": "Analytics Weekly",
+        "topic": "Data Science",
+        "score": 82
+    },
+    {
+        "title": "Cloud Computing - pilvipalvelut selitettynä",
+        "url": "https://example.com/cloud-computing-guide",
+        "description": "Ymmärrä cloud computing -perusteet ja miten voit hyödyntää pilvipalveluja projekteissasi. Vertailu eri palveluntarjoajien välillä ja käytännön vinkit.",
+        "source": "Cloud Tech",
+        "topic": "Cloud Computing",
+        "score": 75
+    }
+]
+
 MOCK_AI_RECOMMENDATIONS = [
     {"query": "python tutorials", "confidence": 0.92},
     {"query": "flask web app", "confidence": 0.88},
@@ -274,6 +317,93 @@ def get_trending():
         logger.error(f"Error getting trending data: {e}")
         # Fallback to mock data
         return jsonify(MOCK_TRENDING_DATA)
+
+@app.route('/api/trending/articles')
+@limiter.limit("30 per minute")  # Rate limiting
+def get_trending_articles():
+    """Get top 5 trending articles based on trending topics"""
+    try:
+        articles = []
+        seen_urls = set()
+        
+        # Try to get real trending topics from database
+        trending_topics = []
+        try:
+            trending_topics = storage.get_top_trending_topics(limit=5, hours=24)
+        except Exception as e:
+            logger.warning(f"Error getting trending topics from database: {e}")
+        
+        # If no trending topics in database, use mock data
+        if not trending_topics:
+            logger.info("No trending topics in database, using mock trending topics")
+            for mock_topic in MOCK_TRENDING_DATA[:5]:
+                # Create a simple object with topic attribute
+                class MockTopic:
+                    def __init__(self, topic_dict):
+                        self.topic = topic_dict['topic']
+                        self.score = topic_dict['score'] / 100.0  # Convert percentage to 0-1
+                trending_topics.append(MockTopic(mock_topic))
+        
+        # Try to get real search results if search_manager is available
+        if search_manager:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                for topic_result in trending_topics:
+                    if len(articles) >= 5:
+                        break
+                    
+                    topic = topic_result.topic
+                    try:
+                        # Search for articles about this topic
+                        search_results = loop.run_until_complete(
+                            search_manager.search(topic, max_results=3)
+                        )
+                        
+                        # Add unique articles to list
+                        if search_results and hasattr(search_results, 'results'):
+                            for result in search_results.results:
+                                if result.url not in seen_urls and len(articles) < 5:
+                                    articles.append({
+                                        "title": validate_and_sanitize_input(result.title, 200),
+                                        "url": validate_and_sanitize_input(result.url, 500),
+                                        "description": validate_and_sanitize_input(result.snippet, 300),
+                                        "source": validate_and_sanitize_input(result.source, 50),
+                                        "topic": validate_and_sanitize_input(topic, 200),
+                                        "score": int(topic_result.score * 100) if hasattr(topic_result, 'score') else 75
+                                    })
+                                    seen_urls.add(result.url)
+                    except Exception as e:
+                        logger.warning(f"Error searching for topic '{topic}': {e}")
+                        continue
+            except Exception as e:
+                logger.warning(f"Error in search loop: {e}")
+            finally:
+                loop.close()
+        
+        # If we don't have enough real articles, use mock articles
+        if len(articles) < 5:
+            logger.info(f"Only found {len(articles)} real articles, using mock data to fill up to 5")
+            # Add mock articles to reach 5 total
+            for mock_article in MOCK_TRENDING_ARTICLES:
+                if len(articles) >= 5:
+                    break
+                if mock_article['url'] not in seen_urls:
+                    articles.append(mock_article)
+                    seen_urls.add(mock_article['url'])
+        
+        # If still no articles, return only mock articles
+        if len(articles) == 0:
+            logger.info("No articles found, returning mock articles")
+            return jsonify({"articles": MOCK_TRENDING_ARTICLES[:5]})
+        
+        # Ensure we have exactly 5 articles
+        return jsonify({"articles": articles[:5]})
+        
+    except Exception as e:
+        logger.error(f"Error getting trending articles: {e}")
+        # Return mock articles as fallback
+        return jsonify({"articles": MOCK_TRENDING_ARTICLES[:5]})
 
 @app.route('/api/recommendations')
 @limiter.limit("20 per minute")  # Rate limiting
